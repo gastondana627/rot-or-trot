@@ -84,8 +84,8 @@ export default function FeedView({ ideas, updateIdeaStatus, addIdea }: FeedViewP
 
   return (
     <div className="h-full relative flex flex-col p-3 sm:p-4 md:p-6 max-w-xl mx-auto w-full min-h-0 overflow-hidden pb-22 sm:pb-4">
-      {/* Decay Timer Header */}
-      <div className="flex justify-between items-center mb-2.5 px-4 py-1.5 sm:py-2 rounded-full bg-border-light/30 border border-border-light shrink-0 flex-shrink-0 z-20 shadow-sm">
+      {/* Decay Timer Header adjusted up slightly */}
+      <div className="mt-10 sm:mt-14 flex justify-between items-center mb-2.5 px-4 py-1.5 sm:py-2 rounded-full bg-border-light/30 border border-border-light shrink-0 flex-shrink-0 z-20 shadow-sm">
         <span className="text-xs md:text-sm text-toxic-purple-light tracking-widest font-mono uppercase font-bold">Decay Timer</span>
         <DecayTimer initialSeconds={idea?.decayTime || 60} onExpire={() => idea && handleSwipe(idea.id, 'left')} />
       </div>
