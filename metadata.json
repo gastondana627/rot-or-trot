@@ -1,0 +1,6 @@
+{
+  "name": "Rot or Trot",
+  "description": "A dark cyberpunk swipe engine for evaluating hackathon app ideas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
