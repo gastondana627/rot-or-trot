@@ -7,14 +7,34 @@ export default function DesktopStudio({ addIdea }: { addIdea: (idea: any) => voi
 
   const handleGenerate = () => {
     if (!pitch.trim()) return;
+    
+    // We pass the raw pitch as the title so the App.tsx interceptor can grab the URL, 
+    // while ensuring we don't lose our specific Studio tags!
     addIdea({
-      title: "GENERATED IDEA",
-      description: pitch,
+      title: pitch, 
       tags: [tag.split(' ')[0], 'WEB3'],
       decayTime: 42
     });
     setPitch('');
   };
+
+  // --- LIVE PREVIEW PARSER (Real-time formatting) ---
+  let previewTitle = pitch ? "GENERATED PREVIEW" : "DARK CYBERPUNK X SHADCN";
+  let previewDesc = pitch || "A chaotic swipe engine for deciding whether an idea should rot in the backlog or trot into production.";
+  let previewFooter = pitch ? "Preview generated..." : "Awaiting repo input...";
+
+  // Instantly format if it detects a GitHub URL while typing
+  const githubRegex = /github\.com\/([^/]+)\/([^/\s]+)/i;
+  const match = pitch.match(githubRegex);
+
+  if (match) {
+    const username = match[1];
+    const repo = match[2].replace('.git', '');
+    previewTitle = repo.toUpperCase();
+    previewDesc = `Built by @${username}. ${pitch}`;
+    previewFooter = "GitHub Repo Detected ⚡";
+  }
+  // --------------------------------------------------
 
   return (
     <div className="flex flex-col h-full w-full bg-bg-base text-zinc-100 p-8 overflow-y-auto">
@@ -124,12 +144,11 @@ export default function DesktopStudio({ addIdea }: { addIdea: (idea: any) => voi
                     <div className="flex justify-end mb-4">
                       <span className="border border-toxic-purple text-toxic-purple text-[10px] px-2 py-1 font-mono">NEW APP IDEA</span>
                     </div>
-                    <h3 className="font-bold text-xl tracking-tight mb-2 uppercase">{pitch ? "GENERATED PREVIEW" : "DARK CYBERPUNK X SHADCN"}</h3>
-                    <p className="text-zinc-400 text-sm font-mono mb-4">
-                      {pitch || "A chaotic swipe engine for deciding whether an idea should rot in the backlog or trot into production."}
-                    </p>
+                    {/* Live formatting applied here */}
+                    <h3 className="font-bold text-xl tracking-tight mb-2 uppercase">{previewTitle}</h3>
+                    <p className="text-zinc-400 text-sm font-mono mb-4">{previewDesc}</p>
                     <div className="text-[10px] text-zinc-500 font-mono italic">
-                      {pitch ? "Preview generated..." : "Awaiting repo input..."}
+                      {previewFooter}
                     </div>
                  </div>
 

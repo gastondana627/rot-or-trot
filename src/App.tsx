@@ -63,6 +63,65 @@ export default function App() {
     }
   };
 
+  // --- NEW API SUBMISSION INTERCEPTOR ---
+  const handleApiSubmit = async (ideaData: any) => {
+    // 1. Extract the raw text
+    const rawInput = typeof ideaData === 'string' ? ideaData : ideaData.title || JSON.stringify(ideaData);
+    
+    // 2. Smart GitHub URL Parser
+    let parsedTitle = ideaData.title || rawInput;
+    let parsedDesc = ideaData.description || 'Awaiting community roast...';
+    
+    const githubRegex = /github\.com\/([^/]+)\/([^/\s]+)/i;
+    const match = rawInput.match(githubRegex);
+    
+    if (match) {
+      const username = match[1];
+      const repo = match[2].replace('.git', ''); 
+      parsedTitle = repo.toUpperCase(); 
+      parsedDesc = `Built by @${username}. ${rawInput}`;
+    }
+
+    // 3. DUPLICATE GUARD: Check if it already exists in the feed
+    const isDuplicate = ideas.some(
+      (idea) => idea.title.toLowerCase() === parsedTitle.toLowerCase() || 
+                (idea.description && idea.description.includes(rawInput))
+    );
+
+    if (isDuplicate) {
+      console.warn('Duplicate detected! Blocking submission to protect the feed.');
+      // Optional: You could trigger your 'showAlerts' state here to warn the user!
+      return; 
+    }
+
+    // 4. Assemble the polished UI card
+    const cleanIdea = {
+      ...(typeof ideaData === 'object' ? ideaData : {}),
+      title: parsedTitle,
+      description: parsedDesc
+    };
+
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: rawInput })
+      });
+
+      if (res.ok) {
+        const newProject = await res.json();
+        addIdea(newProject.title ? newProject : cleanIdea);
+      } else {
+        console.warn('Backend returned an error, falling back to local parsed state.');
+        addIdea(cleanIdea);
+      }
+    } catch (error) {
+      console.error('Network error during submission, falling back to local state:', error);
+      addIdea(cleanIdea); 
+    }
+  };
+  // --------------------------------------
+
   if (needsAuth) {
     return (
       <div className="flex flex-col h-screen w-full relative overflow-hidden bg-bg-base font-sans text-zinc-100 items-center justify-center p-8">
@@ -159,7 +218,7 @@ export default function App() {
                    <button 
                      onClick={() => setLastClearedAlertsAt(Date.now())}
                      className="text-[10px] text-zinc-400 font-mono hover:text-toxic-purple transition-colors"
-                   >
+                     >
                      CLEAR ALERTS
                    </button>
                  </div>
@@ -277,9 +336,10 @@ export default function App() {
 
         {/* Desktop Main Content */}
         <main className="flex-1 overflow-hidden relative">
-          {activeDesktopTab === 'control' && <ControlRoom ideas={ideas} updateIdeaStatus={updateIdeaStatus} addIdea={addIdea} />}
+          {/* Note: Swapped addIdea={addIdea} for addIdea={handleApiSubmit} */}
+          {activeDesktopTab === 'control' && <ControlRoom ideas={ideas} updateIdeaStatus={updateIdeaStatus} addIdea={handleApiSubmit} />}
           {activeDesktopTab === 'leaderboard' && <DesktopTrotHub ideas={ideas} />}
-          {activeDesktopTab === 'studio' && <DesktopStudio addIdea={addIdea} />}
+          {activeDesktopTab === 'studio' && <DesktopStudio addIdea={handleApiSubmit} />}
           {activeDesktopTab === 'profile' && <ProfileView ideas={ideas} />}
         </main>
       </div>
@@ -367,9 +427,10 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-hidden relative">
-        {activeTab === 'home' && <FeedView ideas={ideas} updateIdeaStatus={updateIdeaStatus} addIdea={addIdea} />}
+        {/* Note: Swapped addIdea={addIdea} for addIdea={handleApiSubmit} */}
+        {activeTab === 'home' && <FeedView ideas={ideas} updateIdeaStatus={updateIdeaStatus} addIdea={handleApiSubmit} />}
         {activeTab === 'explore' && <ExploreView ideas={ideas} />}
-        {activeTab === 'create' && <CreateView addIdea={addIdea} onComplete={() => setActiveTab('home')} />}
+        {activeTab === 'create' && <CreateView addIdea={handleApiSubmit} onComplete={() => setActiveTab('home')} />}
         {activeTab === 'profile' && <ProfileView ideas={ideas} />}
       </main>
 
